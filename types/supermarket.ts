@@ -5,6 +5,7 @@ export interface Supermarket {
   longitude: number;
   address?: string;
   description?: string;
+  color?: string;
   discountItems?: DiscountItem[];
 }
 
@@ -14,11 +15,10 @@ export interface DiscountItem {
   originalPrice: number;
   discountPrice: number;
   discountPercentage: number;
-  expirationDate: string;
+  supermarketId: string;
 }
 
 export interface Location {
   latitude: number;
   longitude: number;
 }
-

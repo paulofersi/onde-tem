@@ -6,7 +6,7 @@ module.exports = {
     slug: "onde-tem",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/images/icon.png",
+    icon: "./assets/images/logo_app.png",
     scheme: "ondetem",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
@@ -23,8 +23,7 @@ module.exports = {
       versionCode: 1,
       adaptiveIcon: {
         backgroundColor: "#4CAF50",
-        foregroundImage: "./assets/images/android-icon-foreground.png",
-        backgroundImage: "./assets/images/android-icon-background.png",
+        foregroundImage: "./assets/images/logo_app.png",
         monochromeImage: "./assets/images/android-icon-monochrome.png"
       },
       permissions: [
@@ -32,7 +31,12 @@ module.exports = {
         "ACCESS_COARSE_LOCATION"
       ],
       edgeToEdgeEnabled: true,
-      predictiveBackGestureEnabled: false
+      predictiveBackGestureEnabled: false,
+      config: {
+        googleMaps: {
+          apiKey: process.env.GOOGLE_MAPS_API_KEY
+        }
+      }
     },
     web: {
       output: "static",

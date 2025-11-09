@@ -1,16 +1,23 @@
-import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Platform, Dimensions } from 'react-native';
-import { Supermarket } from '@/types/supermarket';
+import { SupermarketCard } from '@/components/SupermarketCard';
+import { DiscountItem, Supermarket } from '@/types/supermarket';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import { Alert, Dimensions, FlatList, StyleSheet, View } from 'react-native';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
 
 interface SupermarketListProps {
   supermarkets: Supermarket[];
+  products?: DiscountItem[];
+  onDeleteSupermarket?: (id: string) => Promise<void>;
 }
 
-export const SupermarketList: React.FC<SupermarketListProps> = ({ supermarkets }) => {
+export const SupermarketList: React.FC<SupermarketListProps> = ({ 
+  supermarkets,
+  products = [],
+  onDeleteSupermarket,
+}) => {
   const router = useRouter();
 
   const handleItemPress = (supermarket: Supermarket) => {
@@ -27,25 +34,56 @@ export const SupermarketList: React.FC<SupermarketListProps> = ({ supermarkets }
     });
   };
 
-  const renderItem = ({ item }: { item: Supermarket }) => (
-    <TouchableOpacity
-      style={styles.item}
-      onPress={() => handleItemPress(item)}
-      activeOpacity={0.7}>
-      <View style={styles.itemContent}>
-        <Text style={styles.itemName}>{item.name}</Text>
-        {item.address && <Text style={styles.itemAddress}>{item.address}</Text>}
-        {item.description && (
-          <Text style={styles.itemDescription}>{item.description}</Text>
-        )}
-        {item.discountItems && item.discountItems.length > 0 && (
-          <Text style={styles.discountBadge}>
-            {item.discountItems.length} produto(s) com desconto
-          </Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+  const handleDeletePress = (supermarket: Supermarket) => {
+    const hasProducts = products.some((p) => p.supermarketId === supermarket.id);
+    
+    if (hasProducts) {
+      Alert.alert(
+        'Não é possível excluir',
+        'Este supermercado possui produtos cadastrados. Remova os produtos antes de excluir o supermercado.'
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Confirmar exclusão',
+      `Deseja realmente excluir o supermercado "${supermarket.name}"?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            if (onDeleteSupermarket) {
+              try {
+                await onDeleteSupermarket(supermarket.id);
+              } catch (error) {
+                Alert.alert('Erro', 'Não foi possível excluir o supermercado');
+              }
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const renderItem = ({ item }: { item: Supermarket }) => {
+    const hasProducts = products.some((p) => p.supermarketId === item.id);
+    const productCount = products.filter((p) => p.supermarketId === item.id).length;
+
+    return (
+      <SupermarketCard
+        supermarket={item}
+        productCount={productCount}
+        onPress={handleItemPress}
+        disableDelete={hasProducts}
+        isTablet={isTablet}
+        onDeletePress={
+          onDeleteSupermarket ? () => handleDeletePress(item) : undefined
+        }
+      />
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -74,49 +112,6 @@ const styles = StyleSheet.create({
   row: {
     justifyContent: 'space-between',
     paddingHorizontal: 8,
-  },
-  item: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    marginBottom: 12,
-    padding: 16,
-    flex: isTablet ? 0.48 : 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
-  },
-  itemContent: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
-  itemAddress: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  itemDescription: {
-    fontSize: 13,
-    color: '#888',
-    marginBottom: 8,
-  },
-  discountBadge: {
-    fontSize: 12,
-    color: '#4CAF50',
-    fontWeight: '600',
-    marginTop: 4,
   },
 });
 

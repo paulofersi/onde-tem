@@ -1,17 +1,55 @@
-import React from 'react';
-import { View, StyleSheet, Platform, Dimensions } from 'react-native';
-import { MapViewComponent } from '@/components/MapView';
-import { mockSupermarkets } from '@/data/mockSupermarkets';
-import { ThemedView } from '@/components/themed-view';
+import { CustomMarker, MapViewComponent } from '@/components/MapView';
+import { ThemedView } from '@/components/ThemedView';
+import { supermarketService } from '@/services/supermarketService';
+import { Supermarket } from '@/types/supermarket';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { Dimensions, Platform, StyleSheet, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 const isTablet = width >= 768;
 
 export default function HomeScreen() {
+  const [supermarkets, setSupermarkets] = useState<Supermarket[]>([]);
+
+  const loadSupermarkets = useCallback(async () => {
+    try {
+      const data = await supermarketService.getAllSupermarkets();
+      setSupermarkets(data);
+    } catch (error) {
+      console.error('Erro ao carregar supermercados:', error);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadSupermarkets();
+    }, [loadSupermarkets])
+  );
+
+  const handleAddMarker = async (marker: CustomMarker) => {
+    try {
+      await supermarketService.createSupermarket({
+        name: marker.name,
+        latitude: marker.latitude,
+        longitude: marker.longitude,
+        address: '',
+        description: '',
+        color: marker.color,
+      });
+      await loadSupermarkets();
+    } catch (error) {
+      console.error('Erro ao salvar supermercado:', error);
+    }
+  };
+
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={[styles.mapContainer, isTablet && styles.mapContainerTablet]}>
-        <MapViewComponent supermarkets={mockSupermarkets} />
+        <MapViewComponent 
+          supermarkets={supermarkets}
+          onAddMarker={handleAddMarker}
+        />
       </View>
     </ThemedView>
   );

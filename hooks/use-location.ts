@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import * as Location from 'expo-location';
-import { Location as LocationType } from '@/types/supermarket';
+import { Location as LocationType } from "@/types/supermarket";
+import * as Location from "expo-location";
+import { useEffect, useState } from "react";
 
 export const useLocation = () => {
   const [location, setLocation] = useState<LocationType | null>(null);
@@ -11,14 +11,13 @@ export const useLocation = () => {
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
-        
-        if (status !== 'granted') {
-          setError('Permissão de localização negada');
+
+        if (status !== "granted") {
+          setError("Permissão de localização negada");
           setLoading(false);
-          // Definir localização padrão (São Paulo) se a permissão for negada
           setLocation({
-            latitude: -23.5505,
-            longitude: -46.6333,
+            latitude: -22.6129,
+            longitude: -43.1774,
           });
           return;
         }
@@ -30,11 +29,10 @@ export const useLocation = () => {
         });
         setError(null);
       } catch (err) {
-        setError('Erro ao obter localização');
-        // Definir localização padrão em caso de erro
+        setError("Erro ao obter localização");
         setLocation({
-          latitude: -23.5505,
-          longitude: -46.6333,
+          latitude: -22.6129,
+          longitude: -43.1774,
         });
       } finally {
         setLoading(false);
@@ -44,4 +42,3 @@ export const useLocation = () => {
 
   return { location, error, loading };
 };
-

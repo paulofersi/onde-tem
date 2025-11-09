@@ -1,25 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import { AddMarkerDialog } from '@/components/AddMarkerDialog';
+import { useLocation } from '@/hooks/use-location';
+import { Supermarket } from '@/types/supermarket';
+import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import MapView, { Marker, Region } from 'react-native-maps';
-import Constants from 'expo-constants';
-import { Supermarket } from '@/types/supermarket';
-import { useLocation } from '@/hooks/useLocation';
-import { useRouter } from 'expo-router';
+
+export interface CustomMarker {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  color: string;
+}
 
 interface MapViewComponentProps {
   supermarkets: Supermarket[];
+  onAddMarker?: (marker: CustomMarker) => void;
 }
 
-export const MapViewComponent: React.FC<MapViewComponentProps> = ({ supermarkets }) => {
+export const MapViewComponent: React.FC<MapViewComponentProps> = ({ 
+  supermarkets,
+  onAddMarker,
+}) => {
   const { location, loading } = useLocation();
   const router = useRouter();
   const googleMapsApiKey = Constants.expoConfig?.extra?.googleMapsApiKey;
+
   const [region, setRegion] = useState<Region>({
-    latitude: -23.5505,
-    longitude: -46.6333,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
+    latitude: -22.6129,
+    longitude: -43.1774,
+    latitudeDelta: 0.02,
+    longitudeDelta: 0.02,
   });
+
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [selectedCoordinate, setSelectedCoordinate] = useState<{ latitude: number; longitude: number } | null>(null);
 
   useEffect(() => {
     if (location && !loading) {
@@ -46,32 +63,67 @@ export const MapViewComponent: React.FC<MapViewComponentProps> = ({ supermarkets
     });
   };
 
+  const handleMapPress = (event: any) => {
+    const { latitude, longitude } = event.nativeEvent.coordinate;
+    setSelectedCoordinate({ latitude, longitude });
+    setDialogVisible(true);
+  };
+
+  const handleSaveMarker = (name: string, color: string) => {
+    if (selectedCoordinate && onAddMarker) {
+      const newMarker: CustomMarker = {
+        id: `custom-${Date.now()}`,
+        name,
+        latitude: selectedCoordinate.latitude,
+        longitude: selectedCoordinate.longitude,
+        color,
+      };
+      onAddMarker(newMarker);
+    }
+  };
+
   if (loading) {
     return <View style={styles.container} />;
   }
 
   return (
-    <MapView
-      style={styles.map}
-      region={region}
-      showsUserLocation={true}
-      showsMyLocationButton={true}
-      onRegionChangeComplete={setRegion}
-      provider={googleMapsApiKey ? "google" : undefined}
-      mapType="standard">
-      {supermarkets.map((supermarket) => (
-        <Marker
-          key={supermarket.id}
-          coordinate={{
-            latitude: supermarket.latitude,
-            longitude: supermarket.longitude,
+    <>
+      <MapView
+        style={styles.map}
+        region={region}
+        showsUserLocation={true}
+        showsMyLocationButton={true}
+        onRegionChangeComplete={setRegion}
+        onPress={handleMapPress}
+        provider={googleMapsApiKey ? "google" : undefined}
+        mapType="standard">
+        {supermarkets.map((supermarket) => (
+          <Marker
+            key={supermarket.id}
+            coordinate={{
+              latitude: supermarket.latitude,
+              longitude: supermarket.longitude,
+            }}
+            title={supermarket.name}
+            description={supermarket.address}
+            pinColor={supermarket.color || '#FF0000'}
+            onPress={() => handleMarkerPress(supermarket)}
+          />
+        ))}
+      </MapView>
+      {selectedCoordinate && (
+        <AddMarkerDialog
+          visible={dialogVisible}
+          latitude={selectedCoordinate.latitude}
+          longitude={selectedCoordinate.longitude}
+          onClose={() => {
+            setDialogVisible(false);
+            setSelectedCoordinate(null);
           }}
-          title={supermarket.name}
-          description={supermarket.address}
-          onPress={() => handleMarkerPress(supermarket)}
+          onSave={handleSaveMarker}
         />
-      ))}
-    </MapView>
+      )}
+    </>
   );
 };
 

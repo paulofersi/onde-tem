@@ -1,27 +1,63 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, Dimensions } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import MapView, { Marker } from 'react-native-maps';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { productService } from '@/services/productService';
+import { supermarketService } from '@/services/supermarketService';
+import { DiscountItem, Supermarket } from '@/types/supermarket';
 import Constants from 'expo-constants';
-import { ThemedView } from '@/components/themed-view';
-import { ThemedText } from '@/components/themed-text';
+import { useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Dimensions, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
 
 const { width, height } = Dimensions.get('window');
 const isTablet = width >= 768;
 
 export default function SupermarketDetailsScreen() {
   const params = useLocalSearchParams();
-  const router = useRouter();
   const googleMapsApiKey = Constants.expoConfig?.extra?.googleMapsApiKey;
 
-  const latitude = parseFloat(params.latitude as string) || -23.5505;
-  const longitude = parseFloat(params.longitude as string) || -46.6333;
-  const name = (params.name as string) || 'Supermercado';
-  const address = (params.address as string) || '';
-  const description = (params.description as string) || '';
+  const [supermarket, setSupermarket] = useState<Supermarket | null>(null);
+  const [discountItems, setDiscountItems] = useState<DiscountItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadData = useCallback(async () => {
+    try {
+      const id = params.id as string;
+      const supermarketData = await supermarketService.getSupermarketById(id);
+      
+      if (supermarketData) {
+        setSupermarket(supermarketData);
+        
+        const allProducts = await productService.getAllProducts();
+        const relatedProducts = allProducts.filter((p) => p.supermarketId === id);
+        setDiscountItems(relatedProducts);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [params.id]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const latitude = supermarket?.latitude || parseFloat(params.latitude as string) || -22.6129;
+  const longitude = supermarket?.longitude || parseFloat(params.longitude as string) || -43.1774;
+  const name = supermarket?.name || (params.name as string) || 'Supermercado';
+  const address = supermarket?.address || (params.address as string) || '';
+  const description = supermarket?.description || (params.description as string) || '';
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(price);
+  };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={styles.container} edges={['bottom', 'left', 'right']} useSafeArea={false}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -77,10 +113,35 @@ export default function SupermarketDetailsScreen() {
           <ThemedText type="subtitle" style={styles.sectionTitle}>
             Produtos com Desconto
           </ThemedText>
-          <ThemedText style={styles.sectionDescription}>
-            Este supermercado possui produtos próximos ao vencimento com descontos
-            especiais. Visite a loja para conferir as ofertas disponíveis.
-          </ThemedText>
+          {discountItems.length > 0 ? (
+            <View style={styles.productsList}>
+              {discountItems.map((item: DiscountItem) => (
+                <View key={item.id} style={styles.productCard}>
+                  <View style={styles.productHeader}>
+                    <ThemedText style={styles.productName}>{item.name}</ThemedText>
+                    <View style={styles.discountBadge}>
+                      <ThemedText style={styles.discountBadgeText}>
+                        -{item.discountPercentage}%
+                      </ThemedText>
+                    </View>
+                  </View>
+                  <View style={styles.productPrices}>
+                    <ThemedText style={styles.originalPrice}>
+                      {formatPrice(item.originalPrice)}
+                    </ThemedText>
+                    <View style={{ width: 12 }} />
+                    <ThemedText style={styles.discountPrice}>
+                      {formatPrice(item.discountPrice)}
+                    </ThemedText>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <ThemedText style={styles.sectionDescription}>
+              Nenhum produto com desconto disponível no momento.
+            </ThemedText>
+          )}
         </View>
       </ScrollView>
     </ThemedView>
@@ -107,7 +168,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#ffffff',
     padding: 16,
-    paddingTop: Platform.OS === 'ios' ? 60 : 20,
+    paddingTop: 16,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -264,6 +325,91 @@ const styles = StyleSheet.create({
       fontSize: 16,
       lineHeight: 24,
     }),
+  },
+  productsList: {
+    marginTop: 12,
+  },
+  productCard: {
+    backgroundColor: '#f9f9f9',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4CAF50',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
+    ...(isTablet && {
+      padding: 20,
+    }),
+  },
+  productHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  productName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    flex: 1,
+    marginRight: 8,
+    ...(isTablet && {
+      fontSize: 18,
+    }),
+  },
+  discountBadge: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  discountBadgeText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
+    ...(isTablet && {
+      fontSize: 14,
+    }),
+  },
+  productPrices: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  originalPrice: {
+    fontSize: 14,
+    color: '#999',
+    textDecorationLine: 'line-through',
+    ...(isTablet && {
+      fontSize: 16,
+    }),
+  },
+  discountPrice: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#4CAF50',
+    ...(isTablet && {
+      fontSize: 24,
+    }),
+  },
+  productFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
   },
 });
 
