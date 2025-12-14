@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "90921801185",
+    "project_id": "onde-tem-2412",
+    "storage_bucket": "onde-tem-2412.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:90921801185:android:bb451d0f2d8aa74c08eea0",
+        "android_client_info": {
+          "package_name": "com.ondetem.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "90921801185-j2nk0g8s300ht69c6ptn1amct1k1q461.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBjjsRuYb0_JLBrSRelnolavvJWnmLbIV0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "90921801185-hg619esciescm4cadohvu8bsafmac9as.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "90921801185-p9nteofpdr054280a8i7ls5mrrpmao1e.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.ondetem.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
