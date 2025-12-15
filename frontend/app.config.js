@@ -4,7 +4,7 @@ module.exports = {
   expo: {
     name: "Onde Tem",
     slug: "onde-tem",
-    version: "1.0.0",
+    version: "2.0.0",
     orientation: "portrait",
     icon: "./assets/images/logo_app.png",
     scheme: "ondetem",
@@ -103,9 +103,7 @@ module.exports = {
       checkAutomatically: "ON_LOAD",
       enabled: true
     },
-    runtimeVersion: {
-      policy: "appVersion"
-    },
+    runtimeVersion: "2.0.0",
     extra: {
       router: {},
       eas: {
